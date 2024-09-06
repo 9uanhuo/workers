@@ -1,0 +1,52 @@
+From f21d78f8870a72832693c59e2f08bc831055bcfb Mon Sep 17 00:00:00 2001
+From: luoxiaohei <aioshang@gmail.com>
+Date: Fri, 13 Oct 2023 17:58:34 +0800
+Subject: [PATCH] feat(utils): improve normalizeFileName to support Unicode
+ characters
+
+- Update the `normalizeFileName` function to use a RegExp that supports Unicode characters
+- Add tests for `normalizeFileName` with various Unicode languages
+---
+ packages/bruno-app/src/utils/common/index.js      |  7 +++----
+ packages/bruno-app/src/utils/common/index.spec.js | 11 +++++++++++
+ 2 files changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/packages/bruno-app/src/utils/common/index.js b/packages/bruno-app/src/utils/common/index.js
+index 992ec233e6..7b0273e1b0 100644
+--- a/packages/bruno-app/src/utils/common/index.js
++++ b/packages/bruno-app/src/utils/common/index.js
+@@ -68,10 +68,9 @@ export const normalizeFileName = (name) => {
+     return name;
+   }
+ 
+-  const validChars = /[^\w\s-]/g;
+-  const formattedName = name.replace(validChars, '-');
+-
+-  return formattedName;
++  // Use Unicode character classes to match alphanumeric characters, spaces, hyphens, and underscores
++  const validChars = new RegExp('[^\\p{L}\\p{M}\\p{N}\\s_-]', 'gu');
++  return name.replace(validChars, '-');
+ };
+ 
+ export const getContentType = (headers) => {
+diff --git a/packages/bruno-app/src/utils/common/index.spec.js b/packages/bruno-app/src/utils/common/index.spec.js
+index 6d52ed1aa2..fb167246e6 100644
+--- a/packages/bruno-app/src/utils/common/index.spec.js
++++ b/packages/bruno-app/src/utils/common/index.spec.js
+@@ -15,5 +15,16 @@ describe('common utils', () => {
+       expect(normalizeFileName('foo/bar/')).toBe('foo-bar-');
+       expect(normalizeFileName('foo\\bar\\')).toBe('foo-bar-');
+     });
++    it('should support unicode', () => {
++      // more unicode languages
++      expect(normalizeFileName('你好世界!?@#$%^&*()')).toBe('你好世界-----------');
++      expect(normalizeFileName('こんにちは世界!?@#$%^&*()')).toBe('こんにちは世界-----------');
++      expect(normalizeFileName('안녕하세요 세계!?@#$%^&*()')).toBe('안녕하세요 세계-----------');
++      expect(normalizeFileName('مرحبا بالعالم!?@#$%^&*()')).toBe('مرحبا بالعالم-----------');
++      expect(normalizeFileName('Здравствуй мир!?@#$%^&*()')).toBe('Здравствуй мир-----------');
++      expect(normalizeFileName('नमस्ते दुनिया!?@#$%^&*()')).toBe('नमस्ते दुनिया-----------');
++      expect(normalizeFileName('สวัสดีชาวโลก!?@#$%^&*()')).toBe('สวัสดีชาวโลก-----------');
++      expect(normalizeFileName('γειά σου κόσμος!?@#$%^&*()')).toBe('γειά σου κόσμος-----------');
++    });
+   });
+
